@@ -1,6 +1,7 @@
-package net.phroa.pm;
+package net.phroa.pm.call;
 
 import com.google.gson.Gson;
+import net.phroa.pm.Pm;
 import net.phroa.pm.model.DownloadConfirmation;
 import net.phroa.pm.model.ProjectVersion;
 import okhttp3.MediaType;
@@ -23,13 +24,13 @@ import java.util.function.Consumer;
 
 import javax.xml.bind.DatatypeConverter;
 
-public class DownloadCallback implements Callback<byte[]> {
+public class ReceiveFile implements Callback<byte[]> {
 
     private final Pm pm;
     private final CommandSource src;
     private final ProjectVersion version;
 
-    public DownloadCallback(Pm pm, CommandSource src, ProjectVersion version) {
+    public ReceiveFile(Pm pm, CommandSource src, ProjectVersion version) {
         this.pm = pm;
         this.src = src;
         this.version = version;
@@ -64,7 +65,6 @@ public class DownloadCallback implements Callback<byte[]> {
             try {
                 byte[] body = response.body();
                 String contentDisposition;
-                String filename;
                 if (response.code() == 300) {
                     okhttp3.Response response1 = pm.getOreClient().newCall(new Request.Builder()
                             .url(response.raw().request().url())
@@ -88,7 +88,7 @@ public class DownloadCallback implements Callback<byte[]> {
                 } else {
                     contentDisposition = response.headers().get("Content-Disposition");
                 }
-                filename = contentDisposition.substring(contentDisposition.indexOf('"') + 1,
+                String filename = contentDisposition.substring(contentDisposition.indexOf('"') + 1,
                         contentDisposition.lastIndexOf('"'));
 
                 MessageDigest d = MessageDigest.getInstance("MD5");

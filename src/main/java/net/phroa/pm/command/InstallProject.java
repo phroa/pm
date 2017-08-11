@@ -1,12 +1,10 @@
 package net.phroa.pm.command;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import net.phroa.pm.DownloadCallback;
+import net.phroa.pm.call.GetLatestVersion;
+import net.phroa.pm.call.GetSpecificVersion;
+import net.phroa.pm.call.ReceiveFile;
 import net.phroa.pm.Pm;
 import net.phroa.pm.model.Project;
-import net.phroa.pm.model.ProjectChannel;
-import net.phroa.pm.model.ProjectVersion;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
@@ -17,9 +15,6 @@ import org.spongepowered.api.text.format.TextColors;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import java.util.List;
-import java.util.Map;
 
 public class InstallProject implements CommandExecutor {
 
@@ -47,66 +42,12 @@ public class InstallProject implements CommandExecutor {
                         if (argVersion.equalsIgnoreCase("recommended")) {
                             src.sendMessage(Text.of(TextColors.GRAY, "Download queued for " + argProject + " @ " + project.recommended.name));
                             pm.getOre().download(argProject, project.recommended.name)
-                                    .enqueue(new DownloadCallback(pm, src, project.recommended));
+                                    .enqueue(new ReceiveFile(pm, src, project.recommended));
                         } else if (argVersion.equalsIgnoreCase("latest")) {
-                            project.channels.forEach(c -> {
-                                final Map<ProjectChannel, ProjectVersion> latestForChannel = Maps.newHashMap();
-                                pm.getOre().listProjectVersions(argProject, ImmutableMap.of("channels", c.name))
-                                        .enqueue(new Callback<List<ProjectVersion>>() {
-                                            @Override
-                                            public void onResponse(Call<List<ProjectVersion>> call, Response<List<ProjectVersion>> response) {
-                                                List<ProjectVersion> versions = response.body();
-                                                if (response.code() == 404 || versions == null || versions.isEmpty()) {
-                                                    src.sendMessage(Text.of(c.name + " doesn't exist."));
-                                                    return;
-                                                }
-
-                                                latestForChannel.put(c, versions.stream()
-                                                        .sorted()
-                                                        .findFirst()
-                                                        .orElse(project.recommended));
-                                            }
-
-                                            @Override
-                                            public void onFailure(Call<List<ProjectVersion>> call, Throwable t) {
-                                                src.sendMessage(Text.of(TextColors.RED, "Network request failure: " + t.getLocalizedMessage()));
-                                                t.printStackTrace();
-                                            }
-                                        });
-
-                                ProjectVersion version = latestForChannel.values()
-                                        .stream()
-                                        .sorted()
-                                        .findFirst()
-                                        .get();
-
-                                src.sendMessage(Text.of(TextColors.GRAY, "Download queued for " + argProject + " @ " + version.name));
-                                pm.getOre().download(argProject, version.name)
-                                        .enqueue(new DownloadCallback(pm, src, version));
-
-                            });
+                            project.channels.forEach(new GetLatestVersion(pm, src, project, argProject));
                         } else {
                             pm.getOre().getProjectVersion(argProject, argVersion)
-                                    .enqueue(new Callback<ProjectVersion>() {
-                                        @Override
-                                        public void onResponse(Call<ProjectVersion> call, Response<ProjectVersion> response) {
-                                            ProjectVersion version = response.body();
-                                            if (response.code() == 404 || version == null) {
-                                                src.sendMessage(Text.of(argVersion + " doesn't exist."));
-                                                return;
-                                            }
-
-                                            src.sendMessage(Text.of(TextColors.GRAY, "Download queued for " + argProject + " @ " + version.name));
-                                            pm.getOre().download(argProject, version.name)
-                                                    .enqueue(new DownloadCallback(pm, src, version));
-                                        }
-
-                                        @Override
-                                        public void onFailure(Call<ProjectVersion> call, Throwable t) {
-                                            src.sendMessage(Text.of(TextColors.RED, "Network request failure: " + t.getLocalizedMessage()));
-                                            t.printStackTrace();
-                                        }
-                                    });
+                                    .enqueue(new GetSpecificVersion(pm, src, argVersion, argProject));
                         }
                     }
 
@@ -119,4 +60,5 @@ public class InstallProject implements CommandExecutor {
 
         return CommandResult.empty();
     }
+
 }
