@@ -16,6 +16,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -90,16 +91,39 @@ public class ReceiveFile implements Callback<byte[]> {
                 }
                 String filename = contentDisposition.substring(contentDisposition.indexOf('"') + 1,
                         contentDisposition.lastIndexOf('"'));
+                Path path = Sponge.getPluginManager().fromInstance(pm).get().getSource().get().getParent().resolve(filename);
+
+                if (Files.exists(path)) {
+                    src.sendMessage(Text.of(TextColors.RED, "The file " + path + " already exists."));
+                    return;
+                }
 
                 MessageDigest d = MessageDigest.getInstance("MD5");
                 d.update(body);
                 String md5 = DatatypeConverter.printHexBinary(d.digest());
 
                 if (md5.equalsIgnoreCase(version.md5)) {
-                    Path path = Sponge.getPluginManager().fromInstance(pm).get().getSource().get().getParent().resolve(filename);
                     src.sendMessage(Text.of(TextColors.GRAY, "Saving to " + path));
                     Files.write(path, body, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-                    src.sendMessage(Text.of(TextColors.GRAY, "The plugin has been downloaded.  It will be inactive until the server is restarted."));
+                    src.sendMessage(Text.of(TextColors.AQUA, "The plugin has been downloaded.  It will be inactive until the server is restarted."));
+
+                    Sponge.getPluginManager().getPlugin(version.pluginId)
+                            .ifPresent(plugin -> {
+                                src.sendMessage(
+                                        Text.of(TextColors.YELLOW, "This plugin has been loaded prior to downloading the new version.  "
+                                                + "The old version will be marked disabled.  If unwanted, delete it from your mods folder."));
+                                plugin.getSource().ifPresent(oldPath -> {
+                                    try {
+                                        Path newPath = oldPath.resolveSibling(oldPath.getFileName() + ".disabled");
+                                        Files.move(oldPath, newPath);
+                                        src.sendMessage(Text.of(TextColors.GRAY, oldPath + " has been renamed to " + newPath.getFileName() + "."));
+                                    } catch (IOException e) {
+                                        src.sendMessage(Text.of(TextColors.RED, "Error disabling the old version: " + e.getLocalizedMessage()));
+                                        e.printStackTrace();
+                                    }
+                                });
+                            });
+
                 } else {
                     src.sendMessage(Text.of(TextColors.RED, "The MD5 hash", TextColors.GRAY, " (" + md5.toLowerCase() + ") ",
                             TextColors.RED, "didn't match the expected result!", TextColors.GRAY, " (" + version.md5.toLowerCase() + ") "));
