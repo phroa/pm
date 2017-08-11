@@ -10,6 +10,7 @@ import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
+import org.spongepowered.api.service.pagination.PaginationList;
 import org.spongepowered.api.service.pagination.PaginationService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
@@ -21,6 +22,7 @@ import retrofit2.Response;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ListProjects implements CommandExecutor {
@@ -37,6 +39,7 @@ public class ListProjects implements CommandExecutor {
     public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
         Collection<Ore.Category> argCategory = args.getAll("category");
         Collection<Ore.Sorting> argSorting = args.getAll("sorting");
+        Optional<String> argSearch = args.getOne("search");
         String categories;
         if (argCategory.isEmpty()) {
             categories = Arrays.asList(Ore.Category.values()).parallelStream()
@@ -59,7 +62,8 @@ public class ListProjects implements CommandExecutor {
         pm.getOre().listProjects(ImmutableMap.of(
                 "categories", categories,
                 "sort", Integer.toString(sorting.value),
-                "limit", Integer.toString(args.<Integer>getOne("limit").orElse(25))))
+                "limit", Integer.toString(args.<Integer>getOne("limit").orElse(25)),
+                "q", argSearch.orElse("")))
                 .enqueue(new Callback<List<Project>>() {
                     @Override
                     public void onResponse(Call<List<Project>> call, Response<List<Project>> response) {
@@ -72,6 +76,8 @@ public class ListProjects implements CommandExecutor {
                                     .map(category -> category.longName)
                                     .collect(Collectors.joining(", "))));
                         }
+                        argSearch.ifPresent(s -> header.append(Text.NEW_LINE).append(Text.of(TextColors.GRAY, "Search: ", TextColors.WHITE, s)));
+
                         Sponge.getServiceManager().provideUnchecked(PaginationService.class).builder()
                                 .title(Text.of(TextColors.GOLD, "Ore Projects"))
                                 .header(header.build())

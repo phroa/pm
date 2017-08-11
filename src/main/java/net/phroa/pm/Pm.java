@@ -6,6 +6,7 @@ import static org.spongepowered.api.command.args.GenericArguments.integer;
 import static org.spongepowered.api.command.args.GenericArguments.none;
 import static org.spongepowered.api.command.args.GenericArguments.onlyOne;
 import static org.spongepowered.api.command.args.GenericArguments.optional;
+import static org.spongepowered.api.command.args.GenericArguments.remainingJoinedStrings;
 import static org.spongepowered.api.command.args.GenericArguments.string;
 
 import com.google.common.collect.ImmutableList;
@@ -46,7 +47,7 @@ public class Pm {
 
     public static final String USAGE = "Usage:\n"
             + "\n"
-            + "/ore [-c category] [-s sorting] [-l limit] - List plugins by category\n"
+            + "/ore [-c category] [-s sorting] [-l limit] [search term...] - List plugins by category\n"
             + "/ore info <pluginid> - Get info on a plugin\n"
             + "/ore install <pluginid> [version|recommended|latest] - Install a plugin\n"
             + "\n"
@@ -96,14 +97,14 @@ public class Pm {
                 .create(Ore.class);
 
         Sponge.getCommandManager().register(this, CommandSpec.builder()
-                .description(Text.of("Install and manage plugins"))
+                .description(Text.of("Search for, install, and manage plugins"))
                 .extendedDescription(Text.of(TextColors.GRAY, USAGE))
                 .permission("pm.base")
                 .arguments(flags()
                         .valueFlag(choices(Text.of("category"), Ore.Category.ALL, true), "c")
                         .valueFlag(choices(Text.of("sorting"), Ore.Sorting.ALL, true), "s")
                         .valueFlag(integer(Text.of("limit")), "l")
-                        .buildWith(none()))
+                        .buildWith(optional(remainingJoinedStrings(Text.of("search")))))
                 .executor(new ListProjects(this, Ore.Sorting.MostStars))
                 .child(CommandSpec.builder()
                         .arguments(onlyOne(string(Text.of("project"))))

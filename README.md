@@ -4,7 +4,7 @@ Find and install Sponge plugins easily.
 
 #### Usage:
 
-    /ore [-c category] [-s sorting] [-l limit] - List plugins by category
+    /ore [-c category] [-s sorting] [-l limit] [search term...] - List plugins by category
     /ore info <pluginid> - Get info on a plugin
     /ore install <pluginid> [version|recommended|latest] - Install a plugin
 
