@@ -17,16 +17,17 @@ group = pluginGroup
 version = pluginVersion
 
 dependencies {
+    shadow 'com.google.code.gson:gson:2.8.0'
     shadow 'com.squareup.retrofit2:retrofit:2.3.0'
     shadow 'com.squareup.retrofit2:converter-gson:2.3.0'
     shadow 'com.squareup.retrofit2:converter-scalars:2.3.0'
     compile 'org.spongepowered:spongeapi:7.0.0-SNAPSHOT'
-    compile 'com.google.code.gson:gson:2.8.0'
 }
 
 shadowJar {
     configurations = [project.configurations.shadow]
 
+    relocate 'com.google.gson', 'net.phroa.pm.shadow.com.google.gson'
     relocate 'okio', 'net.phroa.pm.shadow.okio'
     relocate 'okhttp3', 'net.phroa.pm.shadow.okhttp3'
     relocate 'retrofit2', 'net.phroa.pm.shadow.retrofit2'

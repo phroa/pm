@@ -67,7 +67,7 @@ public class Pm {
                 .connectionSpecs(ImmutableList.of(ConnectionSpec.MODERN_TLS))
                 .addInterceptor(chain -> chain.proceed(chain.request().newBuilder()
                         .header("X-Adoreable", "meow")
-                        .header("User-Agent", "pm/0.2.0-SNAPSHOT " + chain.request().header("User-Agent"))
+                        .header("User-Agent", "pm/0.2.1-SNAPSHOT " + chain.request().header("User-Agent"))
                         .build()))
                 .addNetworkInterceptor(chain -> {
                     if (!chain.request().isHttps()) {
